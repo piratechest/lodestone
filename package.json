@@ -1,0 +1,30 @@
+{
+  "name": "lodestone",
+  "version": "0.0.1",
+  "description": "peer to peer magnet search",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/piratechest/lodestone.git"
+  },
+  "keywords": [
+    "p2p",
+    "magnet",
+    "gossip",
+    "search"
+  ],
+  "author": "d11e9",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/piratechest/lodestone/issues"
+  },
+  "homepage": "https://github.com/piratechest/lodestone",
+  "dependencies": {
+    "gossipmonger": "~0.1.10",
+    "coffee-script": "~1.9.1",
+    "hashcashgen": "~1.0.1"
+  }
+}
