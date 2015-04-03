@@ -17,16 +17,13 @@ defaultArguments =
 		host: 'localhost'
 		port: PORT
 
-defaultOptions =
-	seeds: if isHost then [] else [ id: 'seed1', transport: { host: 'localhost', port: 9001 } ] 
-
-
 class Lodestone extends EventEmitter
-	constructor: ({ @data } = {}) ->
-		@gossip = new Gossipmonger( defaultArguments, defaultOptions )
+	constructor: ({ @data, @seeds } = {}) ->
+		@seeds ?= []
+		@gossip = new Gossipmonger( defaultArguments, { seeds: @seeds } )
 		@_proxyEvents()
-		@gossip.transport.listen ->
-			console.log "Lodestone gossip transport listening on port #{ PORT }"
+		@gossip.transport.listen =>
+			console.log "Lodestone gossip transport listening on port #{ PORT } trying #{ @seeds.length } seeds"
 		@gossip.gossip()
 		@activeSearches = []
 
