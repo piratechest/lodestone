@@ -22,13 +22,17 @@ class Lodestone extends EventEmitter
         @seeds ?= []
         @gossip = new Gossipmonger( defaultArguments, { seeds: @seeds } )
         @_proxyEvents()
+        @activeSearches = []
+
+    start: ->
+        console.log "Lodestone starting..."
+        @started = true
         @gossip.transport.listen =>
             console.log "Lodestone gossip transport listening on port #{ PORT } trying #{ @seeds.length } seeds"
         @gossip.gossip()
-        @activeSearches = []
 
-    listen: (callback) ->
-        @gossip.transport.listen( callback )
+    ping: ->
+        @gossip.update( 'time', Date.now() )
 
     updateData: (data) ->
         console.log "Updating local data: ", data
@@ -69,13 +73,16 @@ class Lodestone extends EventEmitter
             console.log "Hashcash: fail."
 
     _handleGossipNewPeer: =>
-        console.log "Lodestone: New peer"
+        @emit 'update-peers'
+        console.log "Lodestone: New peer", arguments
 
     _handleGossipPeerLive: =>
-        console.log "Lodestone: Peer live"
+        @emit 'update-peers'
+        console.log "Lodestone: Peer live", arguments
 
     _handleGossipPeerDead: =>
-        console.log "Lodestone: Peer dead."
+        @emit 'update-peers'
+        console.log "Lodestone: Peer dead.", arguments
 
     _isSearch: (str) ->
         str.indexOf( '|' ) >= 0
@@ -140,6 +147,7 @@ module.exports = Lodestone
 if isHost
     lode = new Lodestone
         data: {}
+    lode.start()
     console.log( 'Lodestone created.' )
 
 
