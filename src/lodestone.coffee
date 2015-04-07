@@ -68,7 +68,9 @@ class Lodestone extends EventEmitter
             results = @_checkLocalData( mask )
             @_updateIfOutstanding( mask, hashes )
             search = @_combineMaskPOW( mask, @_decrementPOW( pow ) )
-            @gossip.update( search, _.uniq( hashes or [] ).concat( results or [] ) )
+            update = _.uniq( hashes or [] ).concat( results or [] )
+            console.log( 'Updating local data: ', update )
+            @gossip.update( search, update )
         else
             console.log "Hashcash: fail."
 
