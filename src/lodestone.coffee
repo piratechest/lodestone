@@ -18,9 +18,9 @@ defaultArguments =
         port: PORT
 
 class Lodestone extends EventEmitter
-    constructor: ({ @data, @seeds } = {}) ->
+    constructor: ({ @options, @data, @seeds } = {}) ->
         @seeds ?= []
-        @gossip = new Gossipmonger( defaultArguments, { seeds: @seeds } )
+        @gossip = new Gossipmonger( @options or defaultArguments, { seeds: @seeds } )
         @_proxyEvents()
         @activeSearches = []
 
