@@ -11,7 +11,8 @@ isHost = PORT <= 9002
 
 DEFAULT_POW = 3
 
-defaultArguments =
+defaultArguments = (PORT)->
+    DEAD_PEER_PHI: 1
     id: 'defaultID' + PORT
     transport:
         host: 'localhost'
@@ -20,9 +21,10 @@ defaultArguments =
 class Lodestone extends EventEmitter
     constructor: ({ @options, @data, @seeds } = {}) ->
         @seeds ?= []
-        @gossip = new Gossipmonger( @options or defaultArguments, { seeds: @seeds } )
+        @gossip = new Gossipmonger( @options or defaultArguments(PORT), { seeds: @seeds } )
         @_proxyEvents()
         @activeSearches = []
+        @peers = {}
 
     start: ->
         console.log "Lodestone starting..."
@@ -58,9 +60,12 @@ class Lodestone extends EventEmitter
     _handleGossipError: =>
         # console.log "Lodestone ERROR: ", arguments
 
-    _handleGossipUpdate: (peer, search, hashes) =>
-        console.log "Noticed an update by peer: #{ peer }, key: #{ search }, value: ", hashes
-        return unless @_isSearch(search)
+    _handleGossipUpdate: (peerId, key, value) =>
+        console.log "Noticed an update by peer: #{ peerId }, key: #{ key }, value: ", value
+        @_handleSearch( key, value) if @_isSearch( key )
+        @_handleGraphInfo( peerId, key, value ) if @_isGraphInfo( key )
+
+    _handleSearch: (search, hashes) ->
         console.log( 'Is search: true')
         [mask, pow] = @_separateMaskPOW(search)
         if @_checkPOW( mask, pow )
@@ -73,21 +78,52 @@ class Lodestone extends EventEmitter
             @gossip.update( search, update )
         else
             console.log "Hashcash: fail."
-
-    _handleGossipNewPeer: =>
+    
+    _handleGraphInfo: (peerId, key, peerGraph) ->
+        console.log "Lodestone: GraphInfo from #{ peerId }, is: ", peerGraph
+        peers = _.keys( @peers )
+        @peers[peerId] = peerGraph
         @emit 'update-peers'
-        console.log "Lodestone: New peer", arguments
 
-    _handleGossipPeerLive: =>
-        @emit 'update-peers'
-        console.log "Lodestone: Peer live", arguments
+    _updateLocalGraph: ->
+        for peer in @gossip.storage.livePeers()
+            @peers[peer.id] ?= []
+        console.log "Lodestone: Updating local graph", @peers
+        @gossip.update( 'graph', @peers )
 
-    _handleGossipPeerDead: =>
+    _trimGraph: (peers, graph ) ->
+        trim = (value, stop) ->
+            for sub_key, sub_val in value
+                if _.indexOf( peers, sub_key ) is not -1
+                    delete value[sub_key]
+                else
+                    peers.push sub_key
+                    value[ sub_key ] = trim( sub_key, sub_val )
+            value
+        trim( graph )
+            
+
+
+    _handleGossipNewPeer: (peer) =>
+        console.log "Lodestone: New peer", peer
+        @_updateLocalGraph()
         @emit 'update-peers'
-        console.log "Lodestone: Peer dead.", arguments
+
+    _handleGossipPeerLive: (peer) =>
+        console.log "Lodestone: Peer live", peer
+        @_updateLocalGraph()
+        @emit 'update-peers'
+
+    _handleGossipPeerDead: (peer) =>
+        console.log "Lodestone: Peer dead.", peer
+        @_updateLocalGraph()
+        @emit 'update-peers'
 
     _isSearch: (str) ->
         str.indexOf( '|' ) >= 0
+
+    _isGraphInfo: (str) ->
+        str is 'graph'
 
     _updateIfOutstanding: (masks, newHashes) ->
         for tag in @activeSearches
@@ -147,9 +183,23 @@ class Lodestone extends EventEmitter
 module.exports = Lodestone
 
 if isHost
+
+    localSeed =
+        "id": "example"
+        "transport":
+            "host": "localhost"
+            "port": 9001
+
     lode = new Lodestone
         data: {}
     lode.start()
+
+    for count in [0..3]
+        other = new Lodestone
+            options: defaultArguments(9002 + count)
+            seeds: [ localSeed ]
+        other.start()
+
     console.log( 'Lodestone created.' )
 
 
