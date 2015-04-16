@@ -1,8 +1,10 @@
 
-Gossipmonger = require 'gossipmonger'
 _ = require( 'underscore')
 { EventEmitter } = require 'events'
 hashcash = require 'hashcashgen'
+
+
+Gossipmonger = require '../lib/gossipmonger'
 
 rand = (min,max) -> Math.floor(Math.random() * (max - min + 1)) + min
 PORT = parseInt( process.argv[2] ) || rand( 9002, 10000);

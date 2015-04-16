@@ -1,0 +1,3 @@
+[submodule "lib/gossipmonger"]
+	path = lib/gossipmonger
+	url = https://d11e9@github.com/piratechest/gossipmonger.git
